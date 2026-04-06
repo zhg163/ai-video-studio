@@ -208,3 +208,97 @@ class GenerationTaskOut(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# --- Timeline Schemas ---
+
+class TimelineTrackType(str, Enum):
+    VIDEO = "video"
+    VOICEOVER = "voiceover"
+    BGM = "bgm"
+    SUBTITLE = "subtitle"
+
+
+class TransitionType(str, Enum):
+    FADE = "fade"
+    DISSOLVE = "dissolve"
+    CUT = "cut"
+    WIPE = "wipe"
+
+
+class TimelineClipOut(BaseModel):
+    """A single clip on a timeline track."""
+    clip_id: str
+    source_shot_id: str = ""
+    source_asset_id: int | None = None
+    start_ms: int = 0
+    end_ms: int = 0
+    offset_ms: int = 0
+    volume: float | None = None
+    speed: float = 1.0
+
+
+class TimelineTrackOut(BaseModel):
+    """A single track in the timeline."""
+    track_id: str
+    track_type: str = "video"
+    clips: list[TimelineClipOut] = []
+
+
+class SubtitleSegmentOut(BaseModel):
+    """A subtitle segment."""
+    id: str
+    start_ms: int
+    end_ms: int
+    text: str
+
+
+class TransitionOut(BaseModel):
+    """A transition between two clips."""
+    id: str
+    from_clip_id: str
+    to_clip_id: str
+    type: str = "fade"
+    duration_ms: int = 300
+
+
+class TimelineOut(BaseModel):
+    """Timeline output (from MongoDB document)."""
+    id: str
+    project_id: int
+    version_no: int
+    storyboard_version_id: str
+    tracks: list[TimelineTrackOut] = []
+    subtitle_segments: list[SubtitleSegmentOut] = []
+    transitions: list[TransitionOut] = []
+    duration_ms: int = 0
+    created_at: datetime | str
+
+
+class AssembleTimelineRequest(BaseModel):
+    """Request to auto-assemble a timeline from a storyboard."""
+    storyboard_version_id: str
+    voiceover_asset_id: int | None = None
+    bgm_asset_id: int | None = None
+    default_transition: TransitionType = TransitionType.CUT
+    transition_duration_ms: int = Field(default=0, ge=0, le=2000)
+
+
+class TimelineUpdate(BaseModel):
+    """Partial update for a timeline."""
+    tracks: list[dict] | None = None
+    subtitle_segments: list[dict] | None = None
+    transitions: list[dict] | None = None
+
+
+class ClipReorderRequest(BaseModel):
+    """Reorder clips within a track."""
+    track_id: str
+    clip_ids: list[str]  # Ordered list of clip IDs defining the new order
+
+
+class ClipReplaceRequest(BaseModel):
+    """Replace a clip's underlying asset."""
+    track_id: str
+    clip_id: str
+    new_asset_id: int
