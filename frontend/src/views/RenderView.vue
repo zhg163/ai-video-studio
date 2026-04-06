@@ -27,9 +27,10 @@
             v-model="resolution"
             class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
           >
-            <option value="1920x1080">1080p (1920×1080)</option>
-            <option value="1280x720">720p (1280×720)</option>
-            <option value="1080x1920">竖屏 1080×1920</option>
+            <option value="1080p">1080p (1920×1080)</option>
+            <option value="720p">720p (1280×720)</option>
+            <option value="2k">2K (2560×1440)</option>
+            <option value="4k">4K (3840×2160)</option>
           </select>
         </div>
       </div>
@@ -79,7 +80,7 @@ const route = useRoute()
 const projectId = computed(() => route.params.id as string)
 
 const format = ref('mp4')
-const resolution = ref('1920x1080')
+const resolution = ref('1080p')
 const loading = ref(false)
 const error = ref('')
 const job = ref<RenderJob | null>(null)
