@@ -344,3 +344,53 @@ class BatchVoiceoverOut(BaseModel):
     completed: int
     failed: int
     skipped: int
+
+
+# --- Render / Export Schemas ---
+
+
+class RenderResolution(str, Enum):
+    P720 = "720p"
+    P1080 = "1080p"
+    K2 = "2k"
+    K4 = "4k"
+
+
+class RenderFormat(str, Enum):
+    MP4 = "mp4"
+    MOV = "mov"
+
+
+class RenderStatus(str, Enum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+    CANCELED = "canceled"
+
+
+class CreateRenderRequest(BaseModel):
+    """Request to create a render/export task."""
+    timeline_version_id: str
+    resolution: RenderResolution = RenderResolution.P1080
+    burn_subtitle: bool = True
+    format: RenderFormat = RenderFormat.MP4
+
+
+class RenderTaskOut(BaseModel):
+    """Render task output."""
+    id: int
+    project_id: int
+    timeline_version_id: int | None
+    output_asset_id: int | None
+    render_profile: str
+    status: str
+    progress: int
+    error_message: str | None
+    created_by: int
+    created_at: datetime
+    updated_at: datetime
+    output_url: str | None = None
+    cover_url: str | None = None
+
+    model_config = {"from_attributes": True}
