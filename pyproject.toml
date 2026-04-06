@@ -1,0 +1,102 @@
+[project]
+name = "ai-video-studio"
+version = "0.1.0"
+description = "AI Multi-Agent Video Production Platform"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+
+dependencies = [
+    # Web framework
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+
+    # Database - PostgreSQL
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.0",
+
+    # Database - MongoDB
+    "motor>=3.7.0",
+    "pymongo>=4.10.0",
+
+    # Cache & Queue
+    "redis[hiredis]>=5.2.0",
+
+    # Object Storage
+    "minio>=7.2.0",
+
+    # HTTP client
+    "httpx>=0.28.0",
+
+    # Auth
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-multipart>=0.0.18",
+
+    # Async task queue
+    "celery[redis]>=5.4.0",
+
+    # Agent / LLM
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langgraph>=0.2.0",
+
+    # Utilities
+    "orjson>=3.10.0",
+    "structlog>=24.4.0",
+    "tenacity>=9.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.25.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",
+    "factory-boy>=3.3.0",
+    "faker>=33.0.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["packages", "services"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["packages", "services"]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "services/api-service/tests",
+    "services/agent-workflow-service/tests",
+    "services/media-render-service/tests",
+    "services/admin-service/tests",
+    "packages",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
