@@ -22,7 +22,7 @@ export interface PagedData<T> {
   page_size: number
 }
 
-// Brief: structured_brief contains AI output (theme, tone, key_messages, etc.)
+// Brief
 export interface Brief {
   id: string
   project_id: number
@@ -35,6 +35,8 @@ export interface Brief {
     duration_seconds?: number
     key_messages?: string[]
     style_references?: string[]
+    visual_style?: string
+    sound_mood?: string
     [key: string]: unknown
   }
   constraints: Record<string, unknown>
@@ -42,7 +44,7 @@ export interface Brief {
   created_at: string
 }
 
-// Script: sections contains scenes array
+// Script
 export interface ScriptSection {
   scene_number?: number
   title?: string
@@ -65,15 +67,25 @@ export interface Script {
   created_at: string
 }
 
-// Storyboard: scenes[].shots
+// Storyboard — real backend schema from E2E test
 export interface StoryboardShot {
   shot_id?: string
-  shot_number?: number
-  shot_type?: string
-  composition?: string
-  action?: string
-  dialogue?: string
-  duration_seconds?: number
+  order_no?: number
+  shot_type?: string            // close-up / medium / wide / etc.
+  camera_movement?: string
+  character_desc?: string
+  environment_desc?: string
+  action_desc?: string
+  voiceover_text?: string
+  image_prompt?: string
+  video_prompt?: string
+  duration_sec?: number
+  status?: string               // pending / generating / done / failed
+  selected_asset_ids?: string[]
+  // UI-only enrichment (not in backend)
+  start_frame_url?: string
+  end_frame_url?: string
+  video_url?: string
   [key: string]: unknown
 }
 
@@ -94,12 +106,29 @@ export interface Storyboard {
   created_at: string
 }
 
-// Timeline
+// Timeline — real backend schema
+export interface TimelineTrack {
+  track_type?: string            // video / audio / subtitle / bgm
+  clips?: TimelineClip[]
+  [key: string]: unknown
+}
+
 export interface TimelineClip {
   shot_id?: string
-  start_time: number
-  end_time: number
+  asset_id?: string
+  start_ms?: number
+  end_ms?: number
+  // legacy fields
+  start_time?: number
+  end_time?: number
   track?: number
+  [key: string]: unknown
+}
+
+export interface SubtitleSegment {
+  text?: string
+  start_ms?: number
+  end_ms?: number
   [key: string]: unknown
 }
 
@@ -108,6 +137,11 @@ export interface Timeline {
   project_id: number
   version_no?: number
   storyboard_version_id?: string
+  tracks?: TimelineTrack[] | Record<string, unknown>
+  subtitle_segments?: SubtitleSegment[]
+  transitions?: unknown[]
+  duration_ms?: number
+  // legacy
   clips?: TimelineClip[]
   total_duration_seconds?: number
   status?: string
@@ -115,13 +149,46 @@ export interface Timeline {
   [key: string]: unknown
 }
 
+// Render
 export interface RenderJob {
-  id: string
+  id: string | number
   project_id: number
-  status: string
+  status: string                 // pending / processing / done / failed
+  progress?: number
   output_url?: string
+  cover_url?: string
+  output_asset_id?: string
+  render_profile?: string
+  error_message?: string
   format?: string
   resolution?: string
   created_at?: string
+  updated_at?: string
   [key: string]: unknown
+}
+
+// Agent — UI-only types for the chat/agent panel
+export type AgentStatus =
+  | 'idle'
+  | 'thinking'
+  | 'searching'
+  | 'generating'
+  | 'done'
+  | 'failed'
+
+export type AgentStepStatus = 'pending' | 'running' | 'done' | 'failed'
+
+export interface AgentThoughtStep {
+  id: string
+  label: string
+  status: AgentStepStatus
+}
+
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: number
+  thoughtSteps?: AgentThoughtStep[]
+  agentStatus?: AgentStatus
 }
