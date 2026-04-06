@@ -84,10 +84,10 @@ known-first-party = ["packages", "services"]
 
 [tool.pytest.ini_options]
 testpaths = [
-    "services/api-service/tests",
-    "services/agent-workflow-service/tests",
-    "services/media-render-service/tests",
-    "services/admin-service/tests",
+    "services/api_service/tests",
+    "services/agent_workflow_service/tests",
+    "services/media_render_service/tests",
+    "services/admin_service/tests",
     "packages",
 ]
 asyncio_mode = "auto"

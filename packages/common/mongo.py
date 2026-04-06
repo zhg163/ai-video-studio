@@ -26,6 +26,18 @@ def get_mongo_db() -> AsyncIOMotorDatabase:
     return _db
 
 
+def reset_mongo() -> None:
+    """Reset the global MongoDB client/db references.
+
+    Used by tests to ensure the Motor client is bound to the current event loop.
+    """
+    global _client, _db
+    if _client is not None:
+        _client.close()
+    _client = None
+    _db = None
+
+
 async def close_mongo() -> None:
     """Close the MongoDB client connection."""
     global _client, _db

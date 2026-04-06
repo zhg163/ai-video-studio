@@ -12,7 +12,7 @@ class Settings(BaseSettings):
 
     # PostgreSQL
     postgres_host: str = "localhost"
-    postgres_port: int = 5432
+    postgres_port: int = 5433
     postgres_user: str = "ai_video"
     postgres_password: str = "changeme"
     postgres_db: str = "ai_video_studio"

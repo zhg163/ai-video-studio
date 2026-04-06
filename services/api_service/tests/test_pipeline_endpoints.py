@@ -1,29 +1,10 @@
-"""Tests for Brief, Script, Storyboard API route registration."""
+"""Tests for Brief, Script, Storyboard API route registration.
+
+Brief endpoints now have real implementations, so we test route registration
+via the new test_briefs.py. This file covers Script and Storyboard stubs only.
+"""
 
 import pytest
-
-
-# --- Brief endpoints ---
-
-@pytest.mark.asyncio
-async def test_generate_brief_endpoint(client):
-    response = await client.post("/api/v1/projects/1/briefs/generate")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["code"] == 0
-    assert data["data"]["status"] == "queued"
-
-
-@pytest.mark.asyncio
-async def test_list_briefs_endpoint(client):
-    response = await client.get("/api/v1/projects/1/briefs")
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_confirm_brief_endpoint(client):
-    response = await client.post("/api/v1/projects/1/briefs/v1/confirm")
-    assert response.status_code == 200
 
 
 # --- Script endpoints ---

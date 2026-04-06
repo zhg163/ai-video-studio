@@ -8,7 +8,7 @@ class TestSettings:
     def test_default_settings(self):
         s = Settings()
         assert s.postgres_host == "localhost"
-        assert s.postgres_port == 5432
+        assert s.postgres_port == 5433
         assert s.app_env == "development"
 
     def test_postgres_dsn(self):
