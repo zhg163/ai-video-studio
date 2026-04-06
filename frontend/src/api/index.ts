@@ -1,84 +1,106 @@
 import client from './client'
-import type { Project } from '@/types'
 
+// ---- Projects ----
 export const projectsApi = {
-  list: () => client.get<Project[]>('/projects').then(r => r.data),
+  list: (page = 1, pageSize = 20) =>
+    client.get(`/projects`, { params: { page, page_size: pageSize } }).then(r => r.data),
 
-  get: (id: string) => client.get<Project>(`/projects/${id}`).then(r => r.data),
+  get: (id: string | number) =>
+    client.get(`/projects/${id}`).then(r => r.data),
 
-  create: (data: { name: string; description?: string }) =>
-    client.post<Project>('/projects', data).then(r => r.data),
+  create: (data: { name: string; description?: string; aspect_ratio?: string; language?: string }) =>
+    client.post(`/projects`, data).then(r => r.data),
 
-  update: (id: string, data: { name?: string; description?: string }) =>
-    client.put<Project>(`/projects/${id}`, data).then(r => r.data),
+  patch: (id: string | number, data: { name?: string; description?: string }) =>
+    client.patch(`/projects/${id}`, data).then(r => r.data),
 
-  delete: (id: string) => client.delete(`/projects/${id}`),
+  archive: (id: string | number) =>
+    client.post(`/projects/${id}/archive`).then(r => r.data),
 }
 
+// ---- Briefs ----
+// POST /projects/{id}/briefs/generate  body: { text, references? }
+// GET  /projects/{id}/briefs           → PagedData<BriefOut>
+// GET  /projects/{id}/briefs/{vid}     → BriefOut
+// POST /projects/{id}/briefs/{vid}/confirm
 export const briefsApi = {
-  getByProject: (projectId: string) =>
-    client.get(`/projects/${projectId}/briefs`).then(r => r.data),
+  getByProject: (projectId: string | number, page = 1) =>
+    client.get(`/projects/${projectId}/briefs`, { params: { page } }).then(r => r.data),
 
-  generate: (projectId: string, rawInput: string) =>
-    client.post(`/briefs/generate`, { project_id: projectId, raw_input: rawInput }).then(r => r.data),
+  generate: (projectId: string | number, text: string, references: string[] = []) =>
+    client.post(`/projects/${projectId}/briefs/generate`, { text, references }).then(r => r.data),
 
-  get: (id: string) => client.get(`/briefs/${id}`).then(r => r.data),
+  get: (projectId: string | number, versionId: string) =>
+    client.get(`/projects/${projectId}/briefs/${versionId}`).then(r => r.data),
 
-  confirm: (id: string) => client.post(`/briefs/${id}/confirm`).then(r => r.data),
-
-  regenerate: (id: string) => client.post(`/briefs/${id}/regenerate`).then(r => r.data),
+  confirm: (projectId: string | number, versionId: string) =>
+    client.post(`/projects/${projectId}/briefs/${versionId}/confirm`).then(r => r.data),
 }
 
+// ---- Scripts ----
+// POST /projects/{id}/scripts/generate  body: { brief_version_id }
+// GET  /projects/{id}/scripts
+// GET  /projects/{id}/scripts/{vid}
+// POST /projects/{id}/scripts/{vid}/confirm
 export const scriptsApi = {
-  generate: (projectId: string, briefId: string) =>
-    client.post(`/scripts/generate`, { project_id: projectId, brief_id: briefId }).then(r => r.data),
+  getByProject: (projectId: string | number, page = 1) =>
+    client.get(`/projects/${projectId}/scripts`, { params: { page } }).then(r => r.data),
 
-  getByProject: (projectId: string) =>
-    client.get(`/projects/${projectId}/scripts`).then(r => r.data),
+  generate: (projectId: string | number, briefVersionId: string) =>
+    client.post(`/projects/${projectId}/scripts/generate`, { brief_version_id: briefVersionId }).then(r => r.data),
 
-  get: (id: string) => client.get(`/scripts/${id}`).then(r => r.data),
+  get: (projectId: string | number, versionId: string) =>
+    client.get(`/projects/${projectId}/scripts/${versionId}`).then(r => r.data),
 
-  confirm: (id: string) => client.post(`/scripts/${id}/confirm`).then(r => r.data),
-
-  regenerate: (id: string) => client.post(`/scripts/${id}/regenerate`).then(r => r.data),
+  confirm: (projectId: string | number, versionId: string) =>
+    client.post(`/projects/${projectId}/scripts/${versionId}/confirm`).then(r => r.data),
 }
 
+// ---- Storyboards ----
+// POST /projects/{id}/storyboards/generate  body: { script_version_id }
+// GET  /projects/{id}/storyboards
+// GET  /projects/{id}/storyboards/{vid}
+// POST /projects/{id}/storyboards/{vid}/confirm
 export const storyboardsApi = {
-  generate: (projectId: string, scriptId: string) =>
-    client.post(`/storyboards/generate`, { project_id: projectId, script_id: scriptId }).then(r => r.data),
+  getByProject: (projectId: string | number, page = 1) =>
+    client.get(`/projects/${projectId}/storyboards`, { params: { page } }).then(r => r.data),
 
-  getByProject: (projectId: string) =>
-    client.get(`/projects/${projectId}/storyboards`).then(r => r.data),
+  generate: (projectId: string | number, scriptVersionId: string) =>
+    client.post(`/projects/${projectId}/storyboards/generate`, { script_version_id: scriptVersionId }).then(r => r.data),
 
-  get: (id: string) => client.get(`/storyboards/${id}`).then(r => r.data),
+  get: (projectId: string | number, versionId: string) =>
+    client.get(`/projects/${projectId}/storyboards/${versionId}`).then(r => r.data),
 
-  confirm: (id: string) => client.post(`/storyboards/${id}/confirm`).then(r => r.data),
+  confirm: (projectId: string | number, versionId: string) =>
+    client.post(`/projects/${projectId}/storyboards/${versionId}/confirm`).then(r => r.data),
 }
 
-export const shotsApi = {
-  list: (projectId: string) =>
-    client.get(`/projects/${projectId}/shots`).then(r => r.data),
-
-  generateImage: (shotId: string) =>
-    client.post(`/shots/${shotId}/generate-image`).then(r => r.data),
-
-  generateVideo: (shotId: string) =>
-    client.post(`/shots/${shotId}/generate-video`).then(r => r.data),
-}
-
+// ---- Timelines ----
+// POST /projects/{id}/timelines/assemble  body: { storyboard_version_id }
+// GET  /projects/{id}/timelines
+// GET  /projects/{id}/timelines/{vid}
+// POST /projects/{id}/timelines/{vid}/confirm
 export const timelinesApi = {
-  assemble: (projectId: string) =>
-    client.post(`/timelines/assemble`, { project_id: projectId }).then(r => r.data),
+  getByProject: (projectId: string | number, page = 1) =>
+    client.get(`/projects/${projectId}/timelines`, { params: { page } }).then(r => r.data),
 
-  getByProject: (projectId: string) =>
-    client.get(`/projects/${projectId}/timelines`).then(r => r.data),
+  assemble: (projectId: string | number, storyboardVersionId: string) =>
+    client.post(`/projects/${projectId}/timelines/assemble`, { storyboard_version_id: storyboardVersionId }).then(r => r.data),
 
-  get: (id: string) => client.get(`/timelines/${id}`).then(r => r.data),
+  get: (projectId: string | number, versionId: string) =>
+    client.get(`/projects/${projectId}/timelines/${versionId}`).then(r => r.data),
+
+  confirm: (projectId: string | number, versionId: string) =>
+    client.post(`/projects/${projectId}/timelines/${versionId}/confirm`).then(r => r.data),
 }
 
+// ---- Renders ----
+// POST /projects/{id}/renders  body: { timeline_version_id, format?, resolution? }
+// GET  /projects/{id}/renders/{render_id}
 export const rendersApi = {
-  render: (projectId: string, timelineId: string, format = 'mp4') =>
-    client.post(`/renders`, { project_id: projectId, timeline_id: timelineId, format }).then(r => r.data),
+  create: (projectId: string | number, timelineVersionId: string, format = 'mp4', resolution = '1920x1080') =>
+    client.post(`/projects/${projectId}/renders`, { timeline_version_id: timelineVersionId, format, resolution }).then(r => r.data),
 
-  get: (id: string) => client.get(`/renders/${id}`).then(r => r.data),
+  get: (projectId: string | number, renderId: string) =>
+    client.get(`/projects/${projectId}/renders/${renderId}`).then(r => r.data),
 }

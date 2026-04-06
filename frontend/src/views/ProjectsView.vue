@@ -18,7 +18,7 @@
     >
       <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 w-full max-w-md">
         <h2 class="text-lg font-semibold text-white mb-4">新建项目</h2>
-        <form @submit.prevent="handleCreate">
+        <form @submit.prevent>
           <div class="mb-4">
             <label class="block text-sm text-gray-400 mb-1">项目名称 *</label>
             <input
@@ -47,8 +47,9 @@
               取消
             </button>
             <button
-              type="submit"
+              type="button"
               :disabled="store.loading"
+              @click="handleCreate"
               class="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
             >
               {{ store.loading ? '创建中...' : '创建' }}
@@ -119,12 +120,19 @@ const form = ref({ name: '', description: '' })
 onMounted(() => store.fetchAll())
 
 async function handleCreate() {
+  if (!form.value.name.trim()) return
   try {
     const p = await store.create(form.value.name, form.value.description || undefined)
+    console.log('[handleCreate] created project:', p?.id)
     showCreate.value = false
     form.value = { name: '', description: '' }
-    router.push(`/projects/${p.id}/brief`)
-  } catch {
+    if (p?.id) {
+      console.log('[handleCreate] pushing to:', `/projects/${p.id}/brief`)
+      await router.push(`/projects/${p.id}/brief`)
+      console.log('[handleCreate] push done, url:', window.location.href)
+    }
+  } catch (e: unknown) {
+    console.error('[handleCreate] error:', e)
     // error is shown via store.error
   }
 }

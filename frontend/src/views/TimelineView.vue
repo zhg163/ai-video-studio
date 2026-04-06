@@ -30,26 +30,37 @@
               总时长：{{ timeline.total_duration_seconds }}s
             </p>
           </div>
-          <StatusBadge :status="timeline.status" />
+          <span class="text-xs text-gray-500">ID: {{ timeline.id }}</span>
         </div>
 
-        <!-- Visual timeline -->
-        <div v-if="timeline.clips?.length" class="space-y-2 mb-6">
+        <!-- Timeline bar visualization -->
+        <div v-if="clips.length" class="space-y-2 mb-6 overflow-x-auto">
+          <div class="text-xs text-gray-500 mb-2">轨道视图</div>
           <div
-            v-for="clip in timeline.clips"
-            :key="clip.shot_id"
+            v-for="clip in clips"
+            :key="clip.shot_id ?? JSON.stringify(clip)"
             class="flex items-center gap-3"
           >
-            <div class="text-xs text-gray-500 w-8 text-right">{{ clip.start_time.toFixed(1) }}s</div>
-            <div
-              class="h-8 rounded bg-blue-600/40 border border-blue-500/30 flex items-center px-2"
-              :style="{ width: `${Math.max(60, (clip.end_time - clip.start_time) * 20)}px` }"
-            >
-              <span class="text-xs text-blue-300 truncate">Shot {{ clip.shot_id.slice(0, 6) }}</span>
+            <div class="text-xs text-gray-500 w-10 text-right flex-shrink-0">
+              {{ Number(clip.start_time).toFixed(1) }}s
             </div>
-            <div class="text-xs text-gray-600">{{ (clip.end_time - clip.start_time).toFixed(1) }}s</div>
+            <div
+              class="h-8 rounded bg-blue-600/40 border border-blue-500/30 flex items-center px-2 flex-shrink-0"
+              :style="{ width: `${Math.max(60, (clip.end_time - clip.start_time) * 24)}px` }"
+            >
+              <span class="text-xs text-blue-300 truncate">{{ clip.shot_id?.slice(0, 8) ?? 'shot' }}</span>
+            </div>
+            <div class="text-xs text-gray-600 flex-shrink-0">
+              {{ (clip.end_time - clip.start_time).toFixed(1) }}s
+            </div>
           </div>
         </div>
+
+        <!-- Raw JSON fallback -->
+        <details v-if="!clips.length" class="text-xs text-gray-600 mb-4">
+          <summary class="cursor-pointer hover:text-gray-400">时间轴原始数据</summary>
+          <pre class="mt-2 bg-gray-800 rounded p-3 overflow-auto text-gray-400">{{ JSON.stringify(timeline, null, 2) }}</pre>
+        </details>
 
         <div class="flex justify-end">
           <RouterLink
@@ -68,8 +79,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { timelinesApi } from '@/api'
-import type { Timeline } from '@/types'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
+import type { Timeline, TimelineClip } from '@/types'
 
 const route = useRoute()
 const projectId = computed(() => route.params.id as string)
@@ -78,12 +88,20 @@ const timeline = ref<Timeline | null>(null)
 const loading = ref(false)
 const error = ref('')
 
+const clips = computed<TimelineClip[]>(() => {
+  const tl = timeline.value
+  if (!tl) return []
+  if (Array.isArray(tl.clips)) return tl.clips
+  // clips might be nested differently
+  return []
+})
+
 onMounted(async () => {
   loading.value = true
   try {
     const data = await timelinesApi.getByProject(projectId.value)
-    const item = Array.isArray(data) ? data[0] : data
-    if (item) timeline.value = item
+    const items = data?.items ?? []
+    if (items.length > 0) timeline.value = items[0]
   } catch {
     // none yet
   } finally {

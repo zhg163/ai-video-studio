@@ -2,7 +2,7 @@
   <div class="p-6 max-w-4xl mx-auto">
     <div class="mb-6">
       <h2 class="text-xl font-bold text-white mb-1">分镜</h2>
-      <p class="text-gray-400 text-sm">AI 根据脚本生成每个镜头的分镜描述，确认后可生成图片/视频素材。</p>
+      <p class="text-gray-400 text-sm">AI 根据脚本生成每个镜头的分镜描述，确认后可装配时间轴。</p>
     </div>
 
     <div v-if="error" class="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm">
@@ -23,39 +23,47 @@
 
     <div v-else>
       <div class="flex items-center justify-between mb-4">
-        <StatusBadge :status="storyboard.status" />
-        <span class="text-sm text-gray-400">{{ storyboard.shots?.length ?? 0 }} 个镜头</span>
+        <div>
+          <span v-if="isConfirmed" class="text-xs text-green-400 bg-green-900/40 px-2 py-0.5 rounded-full">已确认</span>
+          <span v-else class="text-xs text-yellow-400 bg-yellow-900/40 px-2 py-0.5 rounded-full">待确认</span>
+        </div>
+        <span class="text-sm text-gray-400">{{ totalShots }} 个镜头 · v{{ storyboard.version_no }}</span>
       </div>
 
-      <!-- Shot grid -->
-      <div
-        v-if="storyboard.shots?.length"
-        class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6"
-      >
+      <!-- Scenes and shots -->
+      <div v-if="storyboard.scenes?.length" class="space-y-4 mb-6">
         <div
-          v-for="shot in storyboard.shots"
-          :key="shot.shot_number"
+          v-for="scene in storyboard.scenes"
+          :key="scene.scene_id ?? scene.scene_number"
           class="bg-gray-900 border border-gray-800 rounded-xl p-4"
         >
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs text-blue-400 font-medium">
-              Shot {{ shot.shot_number }} / Scene {{ shot.scene_number }}
-            </span>
-            <span class="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">
-              {{ shot.shot_type }}
-            </span>
+          <h4 class="text-sm font-medium text-blue-400 mb-3">
+            Scene {{ scene.scene_number }}
+            <template v-if="scene.title"> — {{ scene.title }}</template>
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div
+              v-for="shot in scene.shots"
+              :key="shot.shot_id ?? shot.shot_number"
+              class="bg-gray-800/60 rounded-lg p-3 border border-gray-700"
+            >
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs text-gray-400">Shot {{ shot.shot_number }}</span>
+                <span v-if="shot.shot_type" class="text-xs text-gray-600 bg-gray-700 px-2 py-0.5 rounded">
+                  {{ shot.shot_type }}
+                </span>
+              </div>
+              <p v-if="shot.action" class="text-sm text-gray-200 mb-1">{{ shot.action }}</p>
+              <p v-if="shot.composition" class="text-xs text-gray-500">{{ shot.composition }}</p>
+              <div v-if="shot.dialogue" class="mt-1 text-xs text-yellow-300 italic">"{{ shot.dialogue }}"</div>
+              <div v-if="shot.duration_seconds" class="mt-1 text-xs text-gray-600">{{ shot.duration_seconds }}s</div>
+            </div>
           </div>
-          <p class="text-sm text-gray-200 mb-1">{{ shot.action }}</p>
-          <p class="text-xs text-gray-500">{{ shot.composition }}</p>
-          <div v-if="shot.dialogue" class="mt-2 text-xs text-yellow-300 italic">
-            "{{ shot.dialogue }}"
-          </div>
-          <div class="mt-2 text-xs text-gray-600">{{ shot.duration_seconds }}s</div>
         </div>
       </div>
 
       <!-- Actions -->
-      <div v-if="storyboard.status !== 'confirmed'" class="flex justify-end gap-3">
+      <div v-if="!isConfirmed" class="flex justify-end gap-3">
         <button
           @click="doConfirm"
           :disabled="loading"
@@ -83,7 +91,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { storyboardsApi, timelinesApi } from '@/api'
 import type { Storyboard } from '@/types'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
 
 const route = useRoute()
 const projectId = computed(() => route.params.id as string)
@@ -91,13 +98,23 @@ const projectId = computed(() => route.params.id as string)
 const storyboard = ref<Storyboard | null>(null)
 const loading = ref(false)
 const error = ref('')
+const isConfirmed = ref(false)
+
+const totalShots = computed(() =>
+  storyboard.value?.scenes?.reduce((n, s) => n + (s.shots?.length ?? 0), 0) ?? 0
+)
 
 onMounted(async () => {
   loading.value = true
   try {
     const data = await storyboardsApi.getByProject(projectId.value)
-    const item = Array.isArray(data) ? data[0] : data
-    if (item) storyboard.value = item
+    const items = data?.items ?? []
+    if (items.length > 0) {
+      storyboard.value = items[0]
+      const { useProjectStore } = await import('@/stores/projects')
+      const store = useProjectStore()
+      isConfirmed.value = !!store.current?.current_storyboard_version_id
+    }
   } catch {
     // none yet
   } finally {
@@ -110,10 +127,13 @@ async function doConfirm() {
   loading.value = true
   error.value = ''
   try {
-    await storyboardsApi.confirm(storyboard.value.id)
-    storyboard.value = await storyboardsApi.get(storyboard.value.id)
-    // Auto-assemble timeline
-    await timelinesApi.assemble(projectId.value)
+    await storyboardsApi.confirm(projectId.value, storyboard.value.id)
+    isConfirmed.value = true
+    try {
+      await timelinesApi.assemble(projectId.value, storyboard.value.id)
+    } catch {
+      // non-fatal
+    }
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed'
   } finally {

@@ -39,19 +39,18 @@
         :disabled="loading"
         class="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
       >
-        {{ loading ? '渲染中...' : '开始渲染' }}
+        {{ loading ? '提交渲染任务...' : '开始渲染' }}
       </button>
 
-      <!-- Render job result -->
       <div
         v-if="job"
         class="mt-4 p-4 bg-gray-800 rounded-lg space-y-2"
       >
         <div class="flex items-center justify-between">
           <span class="text-sm text-gray-300">渲染任务</span>
-          <StatusBadge :status="job.status" />
+          <span class="text-xs text-gray-400">{{ job.status }}</span>
         </div>
-        <p class="text-xs text-gray-500">ID: {{ job.id }}</p>
+        <p class="text-xs text-gray-500 font-mono">ID: {{ job.id }}</p>
         <div v-if="job.output_url" class="pt-2">
           <a
             :href="job.output_url"
@@ -61,6 +60,10 @@
             下载视频
           </a>
         </div>
+        <details class="text-xs text-gray-600">
+          <summary class="cursor-pointer hover:text-gray-400">任务详情</summary>
+          <pre class="mt-2 bg-gray-900 rounded p-2 overflow-auto text-gray-400">{{ JSON.stringify(job, null, 2) }}</pre>
+        </details>
       </div>
     </div>
   </div>
@@ -71,7 +74,6 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { rendersApi, timelinesApi } from '@/api'
 import type { RenderJob } from '@/types'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
 
 const route = useRoute()
 const projectId = computed(() => route.params.id as string)
@@ -86,11 +88,11 @@ async function doRender() {
   loading.value = true
   error.value = ''
   try {
-    // Get timeline id first
     const tlData = await timelinesApi.getByProject(projectId.value)
-    const tl = Array.isArray(tlData) ? tlData[0] : tlData
-    if (!tl) throw new Error('没有时间轴，请先完成分镜步骤')
-    job.value = await rendersApi.render(projectId.value, tl.id, format.value)
+    const items = tlData?.items ?? []
+    if (!items.length) throw new Error('没有时间轴，请先完成分镜步骤')
+    const tl = items[0]
+    job.value = await rendersApi.create(projectId.value, String(tl.id), format.value, resolution.value)
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to start render'
   } finally {

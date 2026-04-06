@@ -13,7 +13,9 @@ export const useProjectStore = defineStore('projects', () => {
     loading.value = true
     error.value = null
     try {
-      projects.value = await projectsApi.list()
+      const data = await projectsApi.list()
+      // data is PagedData<Project>
+      projects.value = data?.items ?? data ?? []
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'Failed to load projects'
     } finally {
@@ -21,7 +23,7 @@ export const useProjectStore = defineStore('projects', () => {
     }
   }
 
-  async function fetchOne(id: string) {
+  async function fetchOne(id: string | number) {
     loading.value = true
     error.value = null
     try {
@@ -48,8 +50,8 @@ export const useProjectStore = defineStore('projects', () => {
     }
   }
 
-  async function remove(id: string) {
-    await projectsApi.delete(id)
+  async function remove(id: string | number) {
+    await projectsApi.archive(id)
     projects.value = projects.value.filter(p => p.id !== id)
     if (current.value?.id === id) current.value = null
   }

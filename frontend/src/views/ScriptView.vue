@@ -2,16 +2,14 @@
   <div class="p-6 max-w-3xl mx-auto">
     <div class="mb-6">
       <h2 class="text-xl font-bold text-white mb-1">脚本</h2>
-      <p class="text-gray-400 text-sm">AI 根据 Brief 自动生成分场景脚本，你可以确认后进入分镜制作。</p>
+      <p class="text-gray-400 text-sm">AI 根据 Brief 自动生成分场景脚本，确认后进入分镜制作。</p>
     </div>
 
     <div v-if="error" class="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm">
       {{ error }}
     </div>
 
-    <div v-if="loading" class="text-gray-500 text-center py-20">
-      AI 正在生成脚本...
-    </div>
+    <div v-if="loading" class="text-gray-500 text-center py-20">AI 正在生成脚本...</div>
 
     <div v-else-if="!script" class="text-center py-20 text-gray-500">
       <p class="mb-4">还没有脚本，请先完成并确认 Brief。</p>
@@ -27,41 +25,43 @@
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="font-semibold text-white">{{ script.title || '未命名脚本' }}</h3>
-            <p v-if="script.total_duration_seconds" class="text-sm text-gray-400 mt-0.5">
-              总时长：{{ script.total_duration_seconds }} 秒
-            </p>
+            <h3 class="font-semibold text-white">{{ script.title || '未命名脚本' }} v{{ script.version_no }}</h3>
+            <p class="text-xs text-gray-500 mt-0.5">语言：{{ script.language }}</p>
           </div>
-          <StatusBadge :status="script.status" />
+          <div>
+            <span v-if="isConfirmed" class="text-xs text-green-400 bg-green-900/40 px-2 py-0.5 rounded-full">已确认</span>
+            <span v-else class="text-xs text-yellow-400 bg-yellow-900/40 px-2 py-0.5 rounded-full">待确认</span>
+          </div>
         </div>
 
-        <!-- Scenes -->
-        <div v-if="script.scenes?.length" class="space-y-3">
+        <!-- Sections / scenes -->
+        <div v-if="script.sections?.length" class="space-y-3 mb-4">
           <div
-            v-for="scene in script.scenes"
-            :key="scene.scene_number"
+            v-for="(sec, i) in script.sections"
+            :key="i"
             class="bg-gray-800/60 rounded-lg p-4 border border-gray-700"
           >
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs text-blue-400 font-medium uppercase">
-                Scene {{ scene.scene_number }} — {{ scene.title }}
+                Scene {{ sec.scene_number ?? (i + 1) }}
+                <template v-if="sec.title"> — {{ sec.title }}</template>
               </span>
-              <span class="text-xs text-gray-500">{{ scene.duration_seconds }}s</span>
+              <span v-if="sec.duration_seconds" class="text-xs text-gray-500">{{ sec.duration_seconds }}s</span>
             </div>
-            <p class="text-sm text-gray-200 mb-2">{{ scene.narration }}</p>
-            <p class="text-xs text-gray-500 italic">{{ scene.visual_description }}</p>
+            <p v-if="sec.narration" class="text-sm text-gray-200 mb-2">{{ sec.narration }}</p>
+            <p v-if="sec.visual_description" class="text-xs text-gray-500 italic">{{ sec.visual_description }}</p>
+            <!-- Generic fallback for unknown section shape -->
+            <pre v-if="!sec.narration && !sec.visual_description" class="text-xs text-gray-500 overflow-auto">{{ JSON.stringify(sec, null, 2) }}</pre>
           </div>
         </div>
 
+        <!-- full_text fallback -->
+        <div v-if="script.full_text && !script.sections?.length" class="mb-4">
+          <pre class="text-sm text-gray-300 whitespace-pre-wrap">{{ script.full_text }}</pre>
+        </div>
+
         <!-- Actions -->
-        <div v-if="script.status !== 'confirmed'" class="flex justify-end gap-3 pt-4 border-t border-gray-800 mt-4">
-          <button
-            @click="doRegenerate"
-            :disabled="loading"
-            class="px-4 py-2 text-sm border border-gray-700 text-gray-400 hover:text-white rounded-lg transition-colors disabled:opacity-50"
-          >
-            重新生成
-          </button>
+        <div v-if="!isConfirmed" class="flex justify-end gap-3 pt-4 border-t border-gray-800">
           <button
             @click="doConfirm"
             :disabled="loading"
@@ -71,7 +71,7 @@
           </button>
         </div>
 
-        <div v-else class="flex items-center justify-between pt-4 border-t border-gray-800 mt-4">
+        <div v-else class="flex items-center justify-between pt-4 border-t border-gray-800">
           <span class="text-sm text-green-400">脚本已确认</span>
           <RouterLink
             :to="`/projects/${projectId}/storyboard`"
@@ -90,7 +90,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { scriptsApi, storyboardsApi } from '@/api'
 import type { Script } from '@/types'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
 
 const route = useRoute()
 const projectId = computed(() => route.params.id as string)
@@ -98,14 +97,19 @@ const projectId = computed(() => route.params.id as string)
 const script = ref<Script | null>(null)
 const loading = ref(false)
 const error = ref('')
+const isConfirmed = ref(false)
 
 onMounted(async () => {
   loading.value = true
   try {
-    // Try to fetch latest script for project (backend returns list or single)
     const data = await scriptsApi.getByProject(projectId.value)
-    const item = Array.isArray(data) ? data[0] : data
-    if (item) script.value = item
+    const items = data?.items ?? []
+    if (items.length > 0) {
+      script.value = items[0]
+      const { useProjectStore } = await import('@/stores/projects')
+      const store = useProjectStore()
+      isConfirmed.value = !!store.current?.current_script_version_id
+    }
   } catch {
     // none yet
   } finally {
@@ -113,28 +117,18 @@ onMounted(async () => {
   }
 })
 
-async function doRegenerate() {
-  if (!script.value) return
-  loading.value = true
-  error.value = ''
-  try {
-    script.value = await scriptsApi.regenerate(script.value.id)
-  } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : 'Failed'
-  } finally {
-    loading.value = false
-  }
-}
-
 async function doConfirm() {
   if (!script.value) return
   loading.value = true
   error.value = ''
   try {
-    await scriptsApi.confirm(script.value.id)
-    script.value = await scriptsApi.get(script.value.id)
-    // Auto-trigger storyboard generation
-    await storyboardsApi.generate(projectId.value, script.value.id)
+    await scriptsApi.confirm(projectId.value, script.value.id)
+    isConfirmed.value = true
+    try {
+      await storyboardsApi.generate(projectId.value, script.value.id)
+    } catch {
+      // non-fatal
+    }
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed'
   } finally {
