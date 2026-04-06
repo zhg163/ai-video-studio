@@ -1,7 +1,7 @@
-"""Tests for Brief, Script, Storyboard API route registration.
+"""Tests for Script, Storyboard API route registration.
 
-Brief endpoints now have real implementations, so we test route registration
-via the new test_briefs.py. This file covers Script and Storyboard stubs only.
+Script and Storyboard endpoints now require request body.
+Detailed tests are in test_scripts.py and test_storyboards.py.
 """
 
 import pytest
@@ -10,11 +10,10 @@ import pytest
 # --- Script endpoints ---
 
 @pytest.mark.asyncio
-async def test_generate_script_endpoint(client):
+async def test_generate_script_requires_body(client):
+    """Script generate endpoint requires a request body with brief_version_id."""
     response = await client.post("/api/v1/projects/1/scripts/generate")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["data"]["status"] == "queued"
+    assert response.status_code == 422
 
 
 @pytest.mark.asyncio
@@ -26,11 +25,10 @@ async def test_list_scripts_endpoint(client):
 # --- Storyboard endpoints ---
 
 @pytest.mark.asyncio
-async def test_generate_storyboard_endpoint(client):
+async def test_generate_storyboard_requires_body(client):
+    """Storyboard generate endpoint requires a request body with script_version_id."""
     response = await client.post("/api/v1/projects/1/storyboards/generate")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["data"]["status"] == "queued"
+    assert response.status_code == 422
 
 
 @pytest.mark.asyncio

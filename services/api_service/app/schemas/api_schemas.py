@@ -76,9 +76,37 @@ class ScriptOut(BaseModel):
     id: str
     project_id: int
     version_no: int
+    brief_version_id: str
     title: str
     language: str
     sections: list[dict]
     full_text: str
     created_by: int
     created_at: datetime | str
+
+
+class ScriptUpdate(BaseModel):
+    """Partial update for a script."""
+    title: str | None = None
+    sections: list[dict] | None = None
+    full_text: str | None = None
+
+
+# --- Storyboard Schemas ---
+
+class StoryboardGenerateRequest(BaseModel):
+    script_version_id: str
+
+
+class StoryboardOut(BaseModel):
+    id: str
+    project_id: int
+    version_no: int
+    script_version_id: str
+    scenes: list[dict]
+    created_at: datetime | str
+
+
+class StoryboardUpdate(BaseModel):
+    """Partial update for a storyboard (scenes can be edited)."""
+    scenes: list[dict] | None = None
