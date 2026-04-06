@@ -12,39 +12,30 @@ dependencies = [
     "uvicorn[standard]>=0.34.0",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.7.0",
-
     # Database - PostgreSQL
     "sqlalchemy[asyncio]>=2.0.36",
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",
-
     # Database - MongoDB
     "motor>=3.7.0",
     "pymongo>=4.10.0",
-
     # Cache & Queue
     "redis[hiredis]>=5.2.0",
-
     # Object Storage
     "minio>=7.2.0",
-
     # HTTP client
-    "httpx>=0.28.0",
-
+    "httpx[socks]>=0.28.0",
     # Auth & JWT
     "python-jose[cryptography]>=3.3.0",
     "PyJWT>=2.8.0",
     "passlib[bcrypt]>=1.7.4",
     "python-multipart>=0.0.18",
-
     # Async task queue
     "celery[redis]>=5.4.0",
-
     # Agent / LLM
     "langchain>=0.3.0",
     "langchain-community>=0.3.0",
     "langgraph>=0.2.0",
-
     # Utilities
     "orjson>=3.10.0",
     "structlog>=24.4.0",
@@ -94,6 +85,9 @@ testpaths = [
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning",
+]
+markers = [
+    "e2e: end-to-end tests that call real external APIs (deselect with '-m not e2e')",
 ]
 
 [tool.mypy]
