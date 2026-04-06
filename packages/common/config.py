@@ -42,9 +42,14 @@ class Settings(BaseSettings):
 
     # Image Gen
     openai_api_key: str = ""
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_image_model: str = "gpt-image-1"
 
     # Video Gen
     kling_api_key: str = ""
+    kling_access_key: str = ""
+    kling_secret_key: str = ""
+    kling_base_url: str = "https://api.klingai.com"
 
     # TTS
     qwen_tts_api_key: str = ""

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, Field
 
@@ -110,3 +111,100 @@ class StoryboardOut(BaseModel):
 class StoryboardUpdate(BaseModel):
     """Partial update for a storyboard (scenes can be edited)."""
     scenes: list[dict] | None = None
+
+
+# --- Shot Schemas ---
+
+class VideoInputMode(str, Enum):
+    TEXT_TO_VIDEO = "text_to_video"
+    IMAGE_TO_VIDEO = "image_to_video"
+
+
+class GenerateImageRequest(BaseModel):
+    """Request to generate keyframe image(s) for a shot."""
+    image_model: str = "gpt-image-1"
+    candidate_count: int = Field(default=1, ge=1, le=4)
+    resolution: str = "1024x1024"
+    reference_asset_ids: list[int] = []
+    prompt_override: str | None = None  # Override the shot's image_prompt
+
+
+class GenerateVideoRequest(BaseModel):
+    """Request to generate video for a shot."""
+    video_model: str = "kling-v1"
+    input_mode: VideoInputMode = VideoInputMode.IMAGE_TO_VIDEO
+    image_asset_id: int | None = None  # Required for image_to_video mode
+    duration_sec: float = Field(default=5.0, ge=1.0, le=30.0)
+    resolution: str = "1080p"
+    prompt_override: str | None = None  # Override the shot's video_prompt
+
+
+class ShotUpdate(BaseModel):
+    """Partial update for a shot's editable fields."""
+    image_prompt: str | None = None
+    video_prompt: str | None = None
+    character_desc: str | None = None
+    environment_desc: str | None = None
+    action_desc: str | None = None
+    voiceover_text: str | None = None
+    duration_sec: float | None = None
+    shot_type: str | None = None
+    camera_movement: str | None = None
+
+
+class ShotOut(BaseModel):
+    """Shot output (from storyboard's ShotSpec)."""
+    shot_id: str
+    scene_id: str
+    order_no: int
+    shot_type: str
+    camera_movement: str
+    character_desc: str
+    environment_desc: str
+    action_desc: str
+    voiceover_text: str
+    image_prompt: str
+    video_prompt: str
+    duration_sec: float
+    status: str
+    selected_asset_ids: list[int]
+
+
+class AssetOut(BaseModel):
+    """Asset file output."""
+    id: int
+    project_id: int
+    asset_type: str
+    usage_type: str
+    mime_type: str | None
+    file_name: str
+    object_key: str
+    file_size: int | None
+    duration_ms: int | None
+    width: int | None
+    height: int | None
+    status: str
+    presigned_url: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class GenerationTaskOut(BaseModel):
+    """Generation task output."""
+    id: int
+    project_id: int
+    task_type: str
+    biz_key: str | None
+    model_provider: str | None
+    model_name: str | None
+    input_ref: dict | None
+    output_ref: dict | None
+    status: str
+    retry_count: int
+    error_code: str | None
+    error_message: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
