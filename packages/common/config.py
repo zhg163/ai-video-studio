@@ -51,8 +51,12 @@ class Settings(BaseSettings):
     kling_secret_key: str = ""
     kling_base_url: str = "https://api.klingai.com"
 
-    # TTS
+    # TTS (Qwen3-TTS via DashScope OpenAI-compatible API)
     qwen_tts_api_key: str = ""
+    qwen_tts_model: str = "qwen-tts"
+    qwen_tts_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    qwen_tts_voice: str = "alloy"  # Default voice name
+    qwen_tts_response_format: str = "mp3"  # mp3 or wav
 
     # Music
     minimax_api_key: str = ""

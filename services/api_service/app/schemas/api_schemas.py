@@ -302,3 +302,45 @@ class ClipReplaceRequest(BaseModel):
     track_id: str
     clip_id: str
     new_asset_id: int
+
+
+# --- Audio / TTS Schemas ---
+
+
+class VoiceGender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+    NEUTRAL = "neutral"
+
+
+class GenerateVoiceoverRequest(BaseModel):
+    """Request to batch-generate voiceover for all shots in a storyboard."""
+    storyboard_version_id: str
+    voice_name: str = "alloy"
+    speed: float = Field(default=1.0, ge=0.25, le=4.0)
+
+
+class GenerateVoiceoverForShotRequest(BaseModel):
+    """Request to generate voiceover for a single shot."""
+    voice_name: str = "alloy"
+    speed: float = Field(default=1.0, ge=0.25, le=4.0)
+    text_override: str | None = None  # Override shot's voiceover_text
+
+
+class VoiceoverResultItem(BaseModel):
+    """Result for a single shot's voiceover generation."""
+    shot_id: str
+    asset_id: int | None = None
+    status: str  # "completed" | "failed" | "skipped"
+    error: str | None = None
+
+
+class BatchVoiceoverOut(BaseModel):
+    """Response for batch voiceover generation."""
+    project_id: int
+    storyboard_version_id: str
+    results: list[VoiceoverResultItem]
+    total: int
+    completed: int
+    failed: int
+    skipped: int

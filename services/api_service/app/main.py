@@ -23,6 +23,7 @@ from services.api_service.app.api.v1.scripts import router as scripts_router
 from services.api_service.app.api.v1.shots import router as shots_router
 from services.api_service.app.api.v1.storyboards import router as storyboards_router
 from services.api_service.app.api.v1.tasks import router as tasks_router
+from services.api_service.app.api.v1.audio import router as audio_router
 from services.api_service.app.api.v1.timelines import router as timelines_router
 
 
@@ -67,6 +68,7 @@ def create_app() -> FastAPI:
     app.include_router(shots_router, prefix="/api/v1")
     app.include_router(assets_router, prefix="/api/v1")
     app.include_router(timelines_router, prefix="/api/v1")
+    app.include_router(audio_router, prefix="/api/v1")
     app.include_router(renders_router, prefix="/api/v1")
     app.include_router(tasks_router, prefix="/api/v1")
 
